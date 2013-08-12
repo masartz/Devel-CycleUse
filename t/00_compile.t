@@ -1,4 +1,5 @@
 use strict;
+use warnings;
 use Test::More;
 
 use_ok $_ for qw(
@@ -6,4 +7,3 @@ use_ok $_ for qw(
 );
 
 done_testing;
-
