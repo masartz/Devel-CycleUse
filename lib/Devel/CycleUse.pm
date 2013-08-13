@@ -116,7 +116,12 @@ sub find_cycle {
     }
 
     for my $cycle (values %deflate) {
-        print join(" -> ", @$cycle)."\n";
+        if (@$cycle == 2) {
+            if ($cycle->[0] eq $cycle->[1]) {
+                next;
+            }
+        }
+        print join(" -> ", reverse(@$cycle))."\n";
     }
 }
 
