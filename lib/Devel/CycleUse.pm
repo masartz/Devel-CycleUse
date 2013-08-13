@@ -22,35 +22,50 @@ sub find_file {
     return \@target_files;
 }
 
+sub extract_using_modules {
+    my (@content) = @_;
+
+    my $package;
+    my @using_modules;
+    for (@content) {
+        if ($_ =~ /^package\s+([A-Za-z0-9:]+);/) {
+            $package = $1;
+            push @using_modules, $package, [];
+            next;
+        }
+
+        if ($package && $_ =~ /^use\s([A-Za-z0-9:._]+)/) {
+            my $use_module = $1;
+
+            if ($use_module =~ /strict|warnings|utf8|[0-9.]+|vars|base|parent|constant/) {
+                next;
+            }
+            if ($use_module =~ /::$/) {
+                next;
+            }
+            my $flag;
+            for (@{$using_modules[-1]}) {
+                $flag = 1 if ($_ eq $use_module);
+            }
+            next if $flag;
+            push @{$using_modules[-1]}, $use_module;
+        }
+    }
+
+    return @using_modules;
+}
+
 sub build_tree {
     my ($target_files) = @_;
     my %use_tree;
 
     for my $file (@$target_files) {
         my @content = read_file($file, chomp => 1);
-        my $package;
-        for (@content) {
-            if ($_ =~ /^package\s+([A-Za-z0-9:]+)/) {
-                $package = $1;
-                $use_tree{$package} = [] unless $use_tree{$package};
-                next;
-            }
-
-            if ($package && $_ =~ /^use\s([A-Za-z0-9:.]+)/) {
-                my $use_module = $1;
-                if ($use_module =~ /strict|warnings|utf8|[0-9.]+|vars|base|parent/) {
-                    next;
-                }
-                if ($use_module =~ /::$/) {
-                    next;
-                }
-                my $flag;
-                for (@{$use_tree{$package}}) {
-                    $flag = 1 if ($_ eq $use_module);
-                }
-                next if $flag;
-                push @{$use_tree{$package}}, $use_module;
-            }
+        my @using_modules = extract_using_modules(@content);
+        while (@using_modules) {
+            my $package = shift @using_modules;
+            my $modules = shift @using_modules;
+            $use_tree{$package} = $modules;
         }
     }
 
