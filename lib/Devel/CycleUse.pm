@@ -70,7 +70,7 @@ sub detect_cycle_use {
             for (@$route) {
                 if ($_ eq $node) {
                     push @result, [@$route, $_];
-                    goto CYCLE_USE_END;
+                    last;
                 }
             }
 
@@ -83,7 +83,6 @@ sub detect_cycle_use {
         };
 
         $visit_node->($target_node, []);
-        CYCLE_USE_END:
     };
 
     for my $target_node (keys %$tree) {
