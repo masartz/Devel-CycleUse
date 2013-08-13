@@ -44,8 +44,12 @@ sub build_tree {
                 if ($use_module =~ /::$/) {
                     next;
                 }
-                push @{$use_tree{$package}}, $1;
-                next;
+                my $flag;
+                for (@{$use_tree{$package}}) {
+                    $flag = 1 if ($_ eq $use_module);
+                }
+                next if $flag;
+                push @{$use_tree{$package}}, $use_module;
             }
         }
     }
