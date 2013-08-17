@@ -158,6 +158,9 @@ sub find_small_cycle {
         push @lists, $cycle;
     }
 
+    my %uniq_map = map {__make_array_key($_) => $_} reverse @lists;
+    @lists = values %uniq_map;
+
     $self->{result} = \@lists;
     return $self->{result};
 }
@@ -168,6 +171,13 @@ sub print {
     for (@{$self->find_small_cycle}) {
         print join(" -> ", @$_)."\n";
     }
+}
+
+sub __make_array_key {
+    my ($list) = @_;
+
+    my %list_map = map {$_ => 1} @$list;
+    return join("", sort keys %list_map)
 }
 
 1;
