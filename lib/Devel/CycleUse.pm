@@ -6,9 +6,21 @@ our $VERSION = "0.01";
 
 use File::Find;
 use File::Slurp qw(read_file);
+use Carp qw(croak);
 
-sub find_file {
-    my ($path) = @_;
+sub new {
+    my ($class, %args) = @_;
+
+    croak "dir is required" unless $args{dir};
+
+    return bless {
+        dir => $args{dir}
+    }, $class;
+}
+
+sub target_files {
+    my ($self) = @_;
+    return $self->{target_files} if $self->{target_files};
 
     my @target_files;
     my $callback = sub {
@@ -17,12 +29,13 @@ sub find_file {
         push @target_files, $file;
     };
 
-    find($callback, $path);
+    find($callback, $self->{dir});
 
-    return \@target_files;
+    $self->{target_files} = \@target_files;
+    return $self->{target_files};
 }
 
-sub extract_using_modules {
+sub __extract_using_modules {
     my (@content) = @_;
 
     my $package;
@@ -55,13 +68,14 @@ sub extract_using_modules {
     return @using_modules;
 }
 
-sub build_tree {
-    my ($target_files) = @_;
+sub use_module_tree {
+    my ($self) = @_;
+    return $self->{use_module_tree} if $self->{use_module_tree};
     my %use_tree;
 
-    for my $file (@$target_files) {
+    for my $file (@{$self->target_files}) {
         my @content = read_file($file, chomp => 1);
-        my @using_modules = extract_using_modules(@content);
+        my @using_modules = __extract_using_modules(@content);
         while (@using_modules) {
             my $package = shift @using_modules;
             my $modules = shift @using_modules;
@@ -69,11 +83,13 @@ sub build_tree {
         }
     }
 
-    return \%use_tree;
+    $self->{use_module_tree} = \%use_tree;
+    return $self->{use_module_tree};
 }
 
-sub detect_cycle_use {
-    my ($tree) = @_;
+sub cycle_use_list {
+    my ($self) = @_;
+    return $self->{cycle_use_list} if $self->{cycle_use_list};
     my @result;
 
     my $cycle_use = sub {
@@ -91,7 +107,7 @@ sub detect_cycle_use {
 
             unless (exists $mark{$node}) {
                 $mark{$node} = 1;
-                for my $to_node (@{$tree->{$node}}) {
+                for my $to_node (@{$self->use_module_tree->{$node}}) {
                     $visit_node->($to_node, [@$route, $node]);
                 }
             }
@@ -100,18 +116,20 @@ sub detect_cycle_use {
         $visit_node->($target_node, []);
     };
 
-    for my $target_node (keys %$tree) {
+    for my $target_node (keys %{$self->use_module_tree}) {
         $cycle_use->($target_node);
     }
 
-    return \@result;
+    $self->{cycle_use_list} = \@result;
+    return $self->{cycle_use_list};
 }
 
-sub find_cycle {
-    my ($lists) = @_;
+sub find_small_cycle {
+    my ($self) = @_;
+    return $self->{result} if $self->{result};
 
     my %deflate;
-    for my $list (@$lists) {
+    for my $list (@{$self->cycle_use_list}) {
         my @small_cycle;
         for (reverse @$list) {
             for my $small (@small_cycle) {
@@ -130,13 +148,25 @@ sub find_cycle {
         }
     }
 
+    my @lists;
     for my $cycle (values %deflate) {
         if (@$cycle == 2) {
             if ($cycle->[0] eq $cycle->[1]) {
                 next;
             }
         }
-        print join(" -> ", reverse(@$cycle))."\n";
+        push @lists, $cycle;
+    }
+
+    $self->{result} = \@lists;
+    return $self->{result};
+}
+
+sub print {
+    my ($self) = @_;
+
+    for (@{$self->find_small_cycle}) {
+        print join(" -> ", @$_)."\n";
     }
 }
 
@@ -147,7 +177,7 @@ __END__
 
 =head1 NAME
 
-Devel::CycleUse - It's new $module
+Devel::CycleUse -
 
 =head1 SYNOPSIS
 
