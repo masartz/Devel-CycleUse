@@ -8,7 +8,7 @@ use Devel::CycleUse;
 
 subtest 'normal' => sub {
     my $instance = Devel::CycleUse->new(dir => "hoge");
-    $instance->build_tree;
+    $instance->use_module_tree;
 };
 
 done_testing;

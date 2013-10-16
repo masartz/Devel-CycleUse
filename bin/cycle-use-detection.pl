@@ -3,7 +3,7 @@ use warnings;
 
 use Getopt::Long;
 use Pod::Usage;
-use Devel::CycleUse;
+use Devel::CycleUse::CLI;
 
 my (%opt);
 GetOptions (
@@ -12,11 +12,11 @@ GetOptions (
     "help"    => \( my $help ),
 ) or pod2usage(1);
 
-$opt{sort} ||= 'ASC';
+$opt{sort} ||= 'DESC';
 pod2usage(1) if $opt{sort} !~ /\A(ASC|DESC)\z/;
 pod2usage(1) if $help;
 
-Devel::CycleUse->new(dir => $opt{dir})->print( \%opt );
+Devel::CycleUse::CLI->print( \%opt );
 
 exit;
 

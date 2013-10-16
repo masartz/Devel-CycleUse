@@ -165,35 +165,11 @@ sub find_small_cycle {
     return $self->{result};
 }
 
-sub print {
-    my ( $self, $option ) = @_;
-
-    my @find_small_cycle = @{$self->find_small_cycle};
-
-    @find_small_cycle = __sort_list( $option->{sort} , @find_small_cycle );
-
-    for my $row ( @find_small_cycle ) {
-        print sprintf "total %d module : " , scalar @{$row} ;
-        print join(" -> ", @$row)."\n";
-    }
-}
-
 sub __make_array_key {
     my ($list) = @_;
 
     my %list_map = map {$_ => 1} @$list;
     return join("", sort keys %list_map)
-}
-
-sub __sort_list{
-    my ( $order , @sort_array ) = @_;
-
-    return @sort_array if $order !~ /\A(ASC|DESC)\z/;
-
-    return $order eq 'ASC'
-        ? sort { scalar @{$a} <=> scalar @{$b} } @sort_array
-        : sort { scalar @{$b} <=> scalar @{$a} } @sort_array
-        ;
 }
 
 1;

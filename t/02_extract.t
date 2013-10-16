@@ -127,7 +127,7 @@ done_testing;
 sub matcher {
     my ($content, @match_target) = @_;
 
-    my @result = $class->extract_using_modules(split("\n", $content));
+    my @result = $class->__extract_using_modules(split("\n", $content));
     while (@result) {
         my $result_package = shift @result;
         my $result_modules = shift @result;
