@@ -5,5 +5,6 @@ on 'test' => sub {
     requires 'Test::Pretty', '0.27';
     requires 'Test::Exception', '0.32';
     requires 'Test::MockModule', '0.05';
+    requires 'Test::Output', '1.02';
 };
 
